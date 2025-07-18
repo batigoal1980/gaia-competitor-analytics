@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const { ObjectId } = require('mongodb');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -12,7 +13,13 @@ app.use(cors());
 app.use(express.json());
 
 // Serve static files from the React app build
-app.use(express.static(path.join(__dirname, 'dist')));
+const distPath = path.join(__dirname, 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  console.log('Serving static files from:', distPath);
+} else {
+  console.log('Warning: dist folder not found, static files will not be served');
+}
 
 const MONGODB_URI = 'mongodb://instad:bL6oA1zV6iI0cB3yE211222@34.74.181.252:27017/instad';
 
@@ -346,7 +353,15 @@ app.get('/api/videos/:id', async (req, res) => {
 
 // Handle React routing, return all requests to React app
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  const indexPath = path.join(__dirname, 'dist', 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).json({ 
+      message: 'Frontend not built. Please run npm run build first.',
+      error: 'dist/index.html not found'
+    });
+  }
 });
 
 app.listen(PORT, () => {
