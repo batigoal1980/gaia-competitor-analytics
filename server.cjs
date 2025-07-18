@@ -10,7 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5001', 'https://gaia-competitor-analytics-production.up.railway.app'],
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:5001', 
+    'https://gaia-competitor-analytics-production.up.railway.app',
+    'https://gaia-competitor-analytics-93u0cb6eh-batigoal1980s-projects.vercel.app',
+    'https://*.vercel.app'
+  ],
   credentials: true
 }));
 app.use(express.json());
