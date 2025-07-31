@@ -170,11 +170,19 @@ const VideoLabeling = () => {
     setVideoEstimates(estimatesMap)
     
     // Calculate progress increment per second
-    const progressIncrement = 95 / totalDuration // 95% over total duration
+    const progressIncrement = 100 / totalDuration // 100% over total duration
     
     // Start progress bar
     const progressInterval = setInterval(() => {
-      setAnalysisProgress(prev => Math.min(prev + progressIncrement, 95)) // Stop at 95% until complete
+      setAnalysisProgress(prev => {
+        const newProgress = prev + progressIncrement
+        // If analysis is complete, jump to 100%
+        if (newProgress >= 100) {
+          clearInterval(progressInterval)
+          return 100
+        }
+        return newProgress
+      })
     }, 1000)
     
     for (let video of selectedVideos) {
@@ -274,6 +282,11 @@ const VideoLabeling = () => {
             videoInfo: result.videoInfo,
             analysis: analysisText
           }])
+          
+          // Update video status to completed
+          setSelectedVideos(prev => 
+            prev.map(v => v.wholeVideoUrl === video.wholeVideoUrl ? { ...v, status: 'completed' } : v)
+          )
         } else {
           console.error(`❌ Analysis failed with error:`, result.error)
           throw new Error(result.error || 'Unknown analysis error')
