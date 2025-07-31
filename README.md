@@ -141,4 +141,4 @@ The application uses Tailwind CSS with custom utility classes. Modify `src/index
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License. # Railway Build Trigger
