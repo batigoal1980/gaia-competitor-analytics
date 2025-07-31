@@ -41,3 +41,12 @@ coverage/
 # Vercel
 .vercel 
 .vercel
+
+# Video files and temporary files
+temp/
+uploads/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm

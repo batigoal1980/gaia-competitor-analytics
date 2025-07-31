@@ -6,6 +6,9 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+// Import Gemini API routes
+const geminiRoutes = require('./gemini-api-routes.cjs');
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -29,6 +32,24 @@ if (fs.existsSync(distPath)) {
 } else {
   console.log('Warning: dist folder not found, static files will not be served');
 }
+
+// API Routes
+app.use('/api/gemini', geminiRoutes);
+console.log('✅ Gemini API routes mounted at /api/gemini');
+
+// Test endpoint to verify server is running
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      gemini: '/api/gemini',
+      videoFormats: '/api/video-formats',
+      videos: '/api/videos',
+      wholeVideo: '/api/videos/whole-video/:videoUrl'
+    }
+  });
+});
 
 const MONGODB_URI = 'mongodb://instad:bL6oA1zV6iI0cB3yE211222@34.74.181.252:27017/instad';
 

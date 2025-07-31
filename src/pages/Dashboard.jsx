@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, TrendingUp, Medal, Eye, Heart, Share2, DollarSign, Video as VideoIcon, ChevronRight } from 'lucide-react'
+import { Search, TrendingUp, Medal, Eye, Heart, Share2, DollarSign, Video as VideoIcon, ChevronRight, Loader2, AlertCircle } from 'lucide-react'
 import VideoCard from '../components/VideoCard'
 import { API_BASE_URL } from '../config'
 
@@ -9,6 +9,8 @@ const Dashboard = () => {
   const [videoFormats, setVideoFormats] = useState([])
   const [sampleVideos, setSampleVideos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [videosLoading, setVideosLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     fetchVideoFormats()
@@ -17,12 +19,19 @@ const Dashboard = () => {
   useEffect(() => {
     if (selectedFormat) {
       fetchVideosByFormat(selectedFormat.format)
+    } else {
+      setSampleVideos([])
     }
   }, [selectedFormat])
 
-  const fetchVideoFormats = async () => {
+  const fetchVideoFormats = useCallback(async () => {
     try {
+      setLoading(true)
+      setError(null)
       const response = await fetch(`${API_BASE_URL}/api/video-formats`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
       
       // Add ranking and medals
@@ -34,16 +43,21 @@ const Dashboard = () => {
       }))
       
       setVideoFormats(formatsWithRanking)
-      setLoading(false)
     } catch (error) {
       console.error('Error fetching video formats:', error)
+      setError(error.message)
+    } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const fetchVideosByFormat = async (format) => {
+  const fetchVideosByFormat = useCallback(async (format) => {
     try {
+      setVideosLoading(true)
       const response = await fetch(`${API_BASE_URL}/api/videos/format/${encodeURIComponent(format)}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
       
       // Data is already grouped by video, just need to format it for the frontend
@@ -57,24 +71,48 @@ const Dashboard = () => {
       setSampleVideos(videosArray)
     } catch (error) {
       console.error('Error fetching videos by format:', error)
+      setError(error.message)
+    } finally {
+      setVideosLoading(false)
     }
-  }
+  }, [])
 
-  const getMedalIcon = (medal) => {
+  const getMedalIcon = useCallback((medal) => {
     if (medal === 'gold') return '🥇'
     if (medal === 'silver') return '🥈'
     if (medal === 'bronze') return '🥉'
     return null
-  }
+  }, [])
 
-  const handleFormatClick = (format) => {
+  const handleFormatClick = useCallback((format) => {
     setSelectedFormat(selectedFormat?.id === format.id ? null : format)
-  }
+  }, [selectedFormat])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading...</div>
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-purple-600 animate-spin mx-auto mb-4" />
+          <div className="text-lg text-gray-600">Loading video formats...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-8 h-8 text-red-600 mx-auto mb-4" />
+          <div className="text-lg text-red-600 mb-2">Error loading data</div>
+          <div className="text-sm text-gray-500 mb-4">{error}</div>
+          <button 
+            onClick={fetchVideoFormats}
+            className="btn-primary"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     )
   }
@@ -151,13 +189,27 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="p-6">
-              <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                {sampleVideos.map((video) => (
-                  <div key={video.id} className="flex-shrink-0 w-80">
-                    <VideoCard video={video} />
+              {videosLoading ? (
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-center">
+                    <Loader2 className="w-6 h-6 text-purple-600 animate-spin mx-auto mb-2" />
+                    <div className="text-sm text-gray-600">Loading videos...</div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : sampleVideos.length > 0 ? (
+                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  {sampleVideos.map((video) => (
+                    <div key={video.id} className="flex-shrink-0 w-80">
+                      <VideoCard video={video} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <VideoIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No videos found for this format</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
