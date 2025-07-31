@@ -415,8 +415,7 @@ const VideoLabeling = () => {
                               className="w-full h-full object-cover"
                               preload="metadata"
                               playsInline
-                              disablePictureInPicture
-                              disableRemotePlayback
+                              controls={true}
                             onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
                             onPause={() => handleVideoPause(video.wholeVideoUrl)}
                             onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
@@ -434,10 +433,6 @@ const VideoLabeling = () => {
                             }}
                             onCanPlay={() => {
                               console.log('Video can play:', video.wholeVideoUrl);
-                            }}
-                            onTouchStart={(e) => {
-                              // Prevent default touch behavior that might interfere with video
-                              e.preventDefault()
                             }}
                           />
                         </div>

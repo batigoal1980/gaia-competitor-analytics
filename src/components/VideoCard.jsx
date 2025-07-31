@@ -168,12 +168,18 @@ const VideoCard = ({ video }) => {
   }, [])
 
   const handleVideoPlay = useCallback(() => {
+    console.log(`🎬 VideoCard native play event for video: ${videoId}`)
     setIsPlaying(true)
-  }, [])
+    // Dispatch global play event to pause other videos
+    dispatchVideoEvent(VIDEO_EVENTS.PLAY, videoId)
+  }, [videoId])
 
   const handleVideoPause = useCallback(() => {
+    console.log(`🎬 VideoCard native pause event for video: ${videoId}`)
     setIsPlaying(false)
-  }, [])
+    // Dispatch global pause event
+    dispatchVideoEvent(VIDEO_EVENTS.PAUSE, videoId)
+  }, [videoId])
 
   const handleVideoEnded = useCallback(() => {
     setIsPlaying(false)
@@ -223,8 +229,7 @@ const VideoCard = ({ video }) => {
                 className="w-full h-full object-cover"
                 preload="metadata"
                 playsInline
-                disablePictureInPicture
-                disableRemotePlayback
+                controls={true}
                 onPlay={handleVideoPlay}
                 onPause={handleVideoPause}
                 onEnded={handleVideoEnded}
@@ -232,9 +237,8 @@ const VideoCard = ({ video }) => {
                 onError={handleVideoError}
                 onCanPlay={handleVideoCanPlay}
                 onKeyDown={handleKeyDown}
-                onTouchStart={(e) => {
-                  // Prevent default touch behavior that might interfere with video
-                  e.preventDefault()
+                onTouchStart={() => {
+                  console.log('Video touch start - videoId:', videoId)
                 }}
                 tabIndex={0}
               />
@@ -249,28 +253,7 @@ const VideoCard = ({ video }) => {
             )}
           </div>
           
-          {/* Play/Pause Overlay */}
-          {isLoaded && !videoError && (
-            <div 
-              className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer touch-manipulation"
-              onClick={handlePlayPause}
-              onTouchStart={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handlePlayPause()
-              }}
-              onKeyDown={handleKeyDown}
-              tabIndex={0}
-              role="button"
-              aria-label={isPlaying ? 'Pause video' : 'Play video'}
-            >
-              {isPlaying ? (
-                <Pause className="w-6 h-6 text-white" />
-              ) : (
-                <Play className="w-6 h-6 text-white" />
-              )}
-            </div>
-          )}
+
 
           {/* Error State */}
           {videoError && (

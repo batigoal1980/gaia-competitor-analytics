@@ -167,11 +167,10 @@ const Dashboard = () => {
 
       {/* Animated Videos Section */}
       {selectedFormat && (
-        <div className="mt-6 overflow-hidden">
+        <div className="mt-6">
           <div 
-            className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transform transition-all duration-500 ease-in-out"
+            className="bg-white rounded-lg shadow-sm border border-gray-200 transform transition-all duration-500 ease-in-out"
             style={{
-              maxHeight: '800px',
               animation: 'slideDown 0.5s ease-out'
             }}
           >
