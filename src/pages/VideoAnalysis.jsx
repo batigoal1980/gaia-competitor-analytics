@@ -1,8 +1,20 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Upload, Play, RefreshCw, CheckCircle, AlertCircle, Clock, ArrowLeft, Pause, Loader2, Video, Download } from 'lucide-react'
+import { Upload, RefreshCw, CheckCircle, AlertCircle, Clock, ArrowLeft, Loader2, Video, Download } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../config'
+
+// Global video management system (same as VideoPlayer and VideoCard)
+const VIDEO_EVENTS = {
+  PLAY: 'video-play',
+  PAUSE: 'video-pause'
+}
+
+// Custom event dispatcher
+const dispatchVideoEvent = (eventType, videoId) => {
+  console.log(`🎬 VideoAnalysis dispatching ${eventType} event for video: ${videoId}`)
+  window.dispatchEvent(new CustomEvent(eventType, { detail: { videoId } }))
+}
 
 const VideoLabeling = () => {
   const [selectedVideos, setSelectedVideos] = useState([])
@@ -92,44 +104,68 @@ const VideoLabeling = () => {
     }
   }
 
-  // Video management functions
+  // Global video event listeners for analysis videos
+  useEffect(() => {
+    const handleVideoPlay = (event) => {
+      const { videoId: playingVideoId } = event.detail
+      console.log(`🎬 VideoAnalysis received PLAY event from: ${playingVideoId}`)
+      
+      // If another video started playing, pause all analysis videos
+      const isAnyAnalysisVideoPlaying = Object.values(videoStates).some(playing => playing)
+      if (isAnyAnalysisVideoPlaying && !playingVideoId.startsWith('analysis-')) {
+        console.log(`🎬 Pausing all analysis videos due to ${playingVideoId} playing`)
+        setVideoStates(prev => {
+          const newStates = {}
+          Object.keys(prev).forEach(url => {
+            newStates[url] = false
+          })
+          return newStates
+        })
+      }
+    }
+
+    const handleVideoPause = (event) => {
+      const { videoId: pausedVideoId } = event.detail
+      console.log(`🎬 VideoAnalysis received PAUSE event from: ${pausedVideoId}`)
+      // If an analysis video was paused by another video, update state
+      if (pausedVideoId.startsWith('analysis-')) {
+        const videoUrl = pausedVideoId.replace('analysis-', '')
+        if (videoStates[videoUrl]) {
+          setVideoStates(prev => ({ ...prev, [videoUrl]: false }))
+        }
+      }
+    }
+
+    // Listen for global video events
+    window.addEventListener(VIDEO_EVENTS.PLAY, handleVideoPlay)
+    window.addEventListener(VIDEO_EVENTS.PAUSE, handleVideoPause)
+
+    return () => {
+      window.removeEventListener(VIDEO_EVENTS.PLAY, handleVideoPlay)
+      window.removeEventListener(VIDEO_EVENTS.PAUSE, handleVideoPause)
+    }
+  }, [videoStates])
+
+  // Video management functions with global event system
   const handleVideoPlay = useCallback((videoUrl) => {
+    console.log(`🎬 VideoAnalysis native play event for video: ${videoUrl}`)
     setVideoStates(prev => ({ ...prev, [videoUrl]: true }))
-    // Pause all other videos
-    setVideoStates(prev => {
-      const newStates = {}
-      Object.keys(prev).forEach(url => {
-        newStates[url] = url === videoUrl ? true : false
-      })
-      return newStates
-    })
+    // Dispatch global play event to pause other videos
+    dispatchVideoEvent(VIDEO_EVENTS.PLAY, `analysis-${videoUrl}`)
   }, [])
 
   const handleVideoPause = useCallback((videoUrl) => {
+    console.log(`🎬 VideoAnalysis native pause event for video: ${videoUrl}`)
     setVideoStates(prev => ({ ...prev, [videoUrl]: false }))
+    // Dispatch global pause event
+    dispatchVideoEvent(VIDEO_EVENTS.PAUSE, `analysis-${videoUrl}`)
   }, [])
 
   const handleVideoEnded = useCallback((videoUrl) => {
     setVideoStates(prev => ({ ...prev, [videoUrl]: false }))
   }, [])
 
-  const handlePlayPause = useCallback((videoUrl, videoElement) => {
-    if (videoElement) {
-      if (videoStates[videoUrl]) {
-        videoElement.pause()
-      } else {
-        // Pause all other videos first
-        setVideoStates(prev => {
-          const newStates = {}
-          Object.keys(prev).forEach(url => {
-            newStates[url] = url === videoUrl ? true : false
-          })
-          return newStates
-        })
-        videoElement.play()
-      }
-    }
-  }, [videoStates])
+
 
   const handleVideoLoad = (videoUrl) => {
     console.log('Manually loading video:', videoUrl);
@@ -437,23 +473,7 @@ const VideoLabeling = () => {
                           />
                         </div>
                         
-                        {/* Play/Pause Overlay */}
-                        {videoLoadingStates[video.wholeVideoUrl] === 'loaded' && (
-                          <div 
-                            className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              const videoElement = e.target.closest('.relative').querySelector('video');
-                              handlePlayPause(video.wholeVideoUrl, videoElement);
-                            }}
-                          >
-                            {videoStates[video.wholeVideoUrl] ? (
-                              <Pause className="w-6 h-6 text-white" />
-                            ) : (
-                              <Play className="w-6 h-6 text-white" />
-                            )}
-                          </div>
-                        )}
+
 
                         {/* Error State */}
                         {videoLoadingStates[video.wholeVideoUrl] === 'error' && (
