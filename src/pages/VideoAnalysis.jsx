@@ -408,13 +408,15 @@ const VideoLabeling = () => {
                   <div key={video.wholeVideoUrl} className="bg-gray-50 rounded-lg p-4">
                     {/* Video Preview */}
                     <div className="flex flex-col items-center mb-3">
-                      <div className="relative w-full max-w-48 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
+                      <div className="relative w-full max-w-48 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group video-container">
                         <div className="w-full h-full flex items-center justify-center">
-                          <video
-                            src={video.wholeVideoUrl}
-                            className="w-full h-full object-cover"
-                            preload="metadata"
-                            playsInline
+                                                      <video
+                              src={video.wholeVideoUrl}
+                              className="w-full h-full object-cover"
+                              preload="metadata"
+                              playsInline
+                              disablePictureInPicture
+                              disableRemotePlayback
                             onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
                             onPause={() => handleVideoPause(video.wholeVideoUrl)}
                             onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
@@ -432,6 +434,10 @@ const VideoLabeling = () => {
                             }}
                             onCanPlay={() => {
                               console.log('Video can play:', video.wholeVideoUrl);
+                            }}
+                            onTouchStart={(e) => {
+                              // Prevent default touch behavior that might interfere with video
+                              e.preventDefault()
                             }}
                           />
                         </div>

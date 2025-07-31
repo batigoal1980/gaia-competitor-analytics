@@ -314,10 +314,15 @@ const VideoPlayer = () => {
                     controls={true}
                     loop
                     preload="metadata"
+                    playsInline
                     onPlay={handleMainVideoPlay}
                     onPause={handleMainVideoPause}
                     onError={(e) => console.error('Main video error:', e)}
                     onLoadedData={() => console.log('Main video loaded')}
+                    onTouchStart={(e) => {
+                      // Prevent default touch behavior that might interfere with video
+                      e.preventDefault()
+                    }}
                   />
                 </div>
               ) : (

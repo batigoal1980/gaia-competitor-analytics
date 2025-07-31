@@ -214,7 +214,7 @@ const VideoCard = ({ video }) => {
     >
       {/* Video Preview */}
       <div className="flex justify-center p-2 sm:p-4">
-        <div className="relative w-full max-w-36 h-48 sm:h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
+        <div className="relative w-full max-w-36 h-48 sm:h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group video-container">
           <div className="w-full h-full flex items-center justify-center">
             {shouldLoad && videoUrl ? (
               <video
@@ -223,6 +223,8 @@ const VideoCard = ({ video }) => {
                 className="w-full h-full object-cover"
                 preload="metadata"
                 playsInline
+                disablePictureInPicture
+                disableRemotePlayback
                 onPlay={handleVideoPlay}
                 onPause={handleVideoPause}
                 onEnded={handleVideoEnded}
@@ -230,6 +232,10 @@ const VideoCard = ({ video }) => {
                 onError={handleVideoError}
                 onCanPlay={handleVideoCanPlay}
                 onKeyDown={handleKeyDown}
+                onTouchStart={(e) => {
+                  // Prevent default touch behavior that might interfere with video
+                  e.preventDefault()
+                }}
                 tabIndex={0}
               />
             ) : (
@@ -246,8 +252,13 @@ const VideoCard = ({ video }) => {
           {/* Play/Pause Overlay */}
           {isLoaded && !videoError && (
             <div 
-              className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer"
+              className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer touch-manipulation"
               onClick={handlePlayPause}
+              onTouchStart={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handlePlayPause()
+              }}
               onKeyDown={handleKeyDown}
               tabIndex={0}
               role="button"
