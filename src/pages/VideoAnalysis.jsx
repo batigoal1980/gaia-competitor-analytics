@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Upload, Play, RefreshCw, CheckCircle, AlertCircle, Clock, ArrowLeft, Pause, Loader2, Video } from 'lucide-react'
+import { Upload, Play, RefreshCw, CheckCircle, AlertCircle, Clock, ArrowLeft, Pause, Loader2, Video, Download } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { API_BASE_URL } from '../config'
@@ -48,6 +48,48 @@ const VideoLabeling = () => {
 
   const handleBackToLibrary = () => {
     navigate('/videos')
+  }
+
+  const handleExportCSV = async () => {
+    if (analysisResults.length === 0) {
+      alert('No analysis results to export')
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/gemini/export-csv`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          analysisResults: analysisResults
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Get the CSV content
+      const csvContent = await response.text()
+      
+      // Create a blob and download it
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `video-analysis-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      console.log('✅ CSV export completed successfully')
+    } catch (error) {
+      console.error('❌ CSV export error:', error)
+      alert('Failed to export CSV: ' + error.message)
+    }
   }
 
   // Video management functions
@@ -328,7 +370,7 @@ const VideoLabeling = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -344,181 +386,206 @@ const VideoLabeling = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Library
           </button>
-          <button
-            onClick={labelVideos}
-            className="btn-secondary flex items-center"
-            disabled={selectedVideos.length === 0 || isAnalyzing}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            {isAnalyzing ? 'Labeling...' : 'Start Labeling'}
-          </button>
-
         </div>
       </div>
 
-      {/* Selected Videos */}
+      {/* Main Content - Video Cards and Results Side by Side */}
       {selectedVideos.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Selected Videos</h3>
-            {isAnalyzing && (
-              <div className="text-sm text-blue-600">
-                Total estimated time: {totalEstimatedTime}s
-              </div>
-            )}
-          </div>
-          <div className="space-y-6">
-            {selectedVideos.map(video => (
-              <div key={video.wholeVideoUrl} className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-start space-x-4">
-                  {/* Video Preview */}
-                  <div className="flex-shrink-0">
-                    <div className="relative w-36 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
-                      <div className="w-full h-full flex items-center justify-center">
-                        <video
-                          src={video.wholeVideoUrl}
-                          className="w-full h-full object-cover"
-                          preload="metadata"
-                          onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
-                          onPause={() => handleVideoPause(video.wholeVideoUrl)}
-                          onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
-                          onLoadStart={() => {
-                            console.log('Video loading started:', video.wholeVideoUrl);
-                            setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loading' }));
-                          }}
-                          onLoadedData={() => {
-                            console.log('Video loaded successfully:', video.wholeVideoUrl);
-                            setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loaded' }));
-                          }}
-                          onError={(e) => {
-                            console.error('Video load error:', e.target.error);
-                            setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'error' }));
-                          }}
-                          onCanPlay={() => {
-                            console.log('Video can play:', video.wholeVideoUrl);
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Play/Pause Overlay */}
-                      {videoLoadingStates[video.wholeVideoUrl] === 'loaded' && (
-                        <div 
-                          className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const videoElement = e.target.closest('.relative').querySelector('video');
-                            handlePlayPause(video.wholeVideoUrl, videoElement);
-                          }}
-                        >
-                          {videoStates[video.wholeVideoUrl] ? (
-                            <Pause className="w-6 h-6 text-white" />
-                          ) : (
-                            <Play className="w-6 h-6 text-white" />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Error State */}
-                      {videoLoadingStates[video.wholeVideoUrl] === 'error' && (
-                        <div className="absolute inset-0 bg-red-50 flex items-center justify-center">
-                          <div className="text-center">
-                            <Video className="w-8 h-8 text-red-400 mx-auto mb-2" />
-                            <p className="text-xs text-red-600">Video unavailable</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Loading indicator */}
-                      {videoLoadingStates[video.wholeVideoUrl] === 'loading' && (
-                        <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                          <div className="text-center">
-                            <Loader2 className="w-6 h-6 text-white animate-spin mx-auto mb-2" />
-                            <p className="text-xs text-white">Loading...</p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Clips Count Overlay */}
-                      <div className="absolute top-2 right-2">
-                        <div className="bg-purple-600 text-white text-xs px-2 py-1 rounded flex items-center">
-                          <span className="mr-1">#</span>
-                          {video.clips?.length || 0} clips
-                        </div>
-                      </div>
-                      
-                      {/* Ad Type Overlay */}
-                      <div className="absolute bottom-2 right-2">
-                        <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                          {video.adType || 'Unknown Type'}
-                        </div>
-                      </div>
-                    </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Video Cards Section - Fixed on Left */}
+          <div className="lg:col-span-1">
+            <div className="card sticky top-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Selected Videos</h3>
+                {isAnalyzing && (
+                  <div className="text-sm text-blue-600">
+                    Total estimated time: {totalEstimatedTime}s
                   </div>
-                  
-                  {/* Video Info */}
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      {getStatusIcon(video.status || 'pending')}
-                      <div>
-                        <p className="font-medium text-gray-900">{video.wholeVideoUrl.split('/').pop() || 'video.mp4'}</p>
-                        <p className="text-sm text-gray-500">
-                          {video.clips?.length || 0} clips • {video.adType || 'Unknown format'}
-                          {video.status === 'analyzing' && (
-                            <span className="ml-2 text-blue-600">
-                              (est. {videoEstimates[video.wholeVideoUrl] || 60}s)
-                            </span>
-                          )}
-                        </p>
+                )}
+              </div>
+              <div className="space-y-4">
+                {selectedVideos.map(video => (
+                  <div key={video.wholeVideoUrl} className="bg-gray-50 rounded-lg p-4">
+                    {/* Video Preview */}
+                    <div className="flex flex-col items-center mb-3">
+                      <div className="relative w-full max-w-48 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
+                        <div className="w-full h-full flex items-center justify-center">
+                          <video
+                            src={video.wholeVideoUrl}
+                            className="w-full h-full object-cover"
+                            preload="metadata"
+                            playsInline
+                            onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
+                            onPause={() => handleVideoPause(video.wholeVideoUrl)}
+                            onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
+                            onLoadStart={() => {
+                              console.log('Video loading started:', video.wholeVideoUrl);
+                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loading' }));
+                            }}
+                            onLoadedData={() => {
+                              console.log('Video loaded successfully:', video.wholeVideoUrl);
+                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loaded' }));
+                            }}
+                            onError={(e) => {
+                              console.error('Video load error:', e.target.error);
+                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'error' }));
+                            }}
+                            onCanPlay={() => {
+                              console.log('Video can play:', video.wholeVideoUrl);
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Play/Pause Overlay */}
+                        {videoLoadingStates[video.wholeVideoUrl] === 'loaded' && (
+                          <div 
+                            className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center group-hover:bg-opacity-30 transition-all cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const videoElement = e.target.closest('.relative').querySelector('video');
+                              handlePlayPause(video.wholeVideoUrl, videoElement);
+                            }}
+                          >
+                            {videoStates[video.wholeVideoUrl] ? (
+                              <Pause className="w-6 h-6 text-white" />
+                            ) : (
+                              <Play className="w-6 h-6 text-white" />
+                            )}
+                          </div>
+                        )}
+
+                        {/* Error State */}
+                        {videoLoadingStates[video.wholeVideoUrl] === 'error' && (
+                          <div className="absolute inset-0 bg-red-50 flex items-center justify-center">
+                            <div className="text-center">
+                              <Video className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                              <p className="text-xs text-red-600">Video unavailable</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Loading indicator */}
+                        {videoLoadingStates[video.wholeVideoUrl] === 'loading' && (
+                          <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                            <div className="text-center">
+                              <Loader2 className="w-6 h-6 text-white animate-spin mx-auto mb-2" />
+                              <p className="text-xs text-white">Loading...</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Clips Count Overlay */}
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-purple-600 text-white text-xs px-2 py-1 rounded flex items-center">
+                            <span className="mr-1">#</span>
+                            {video.clips?.length || 0} clips
+                          </div>
+                        </div>
+                        
+                        {/* Ad Type Overlay */}
+                        <div className="absolute bottom-2 right-2">
+                          <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                            {video.adType || 'Unknown Type'}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
-                    {/* Progress Bar */}
-                    <div className="flex items-center space-x-2">
+                    {/* Video Info and Status */}
+                    <div className="text-center mb-3">
+                      <div className="flex items-center justify-center space-x-2 mb-2">
+                        {getStatusIcon(video.status || 'pending')}
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{video.wholeVideoUrl.split('/').pop() || 'video.mp4'}</p>
+                          <p className="text-xs text-gray-500">
+                            {video.clips?.length || 0} clips • {video.adType || 'Unknown format'}
+                            {video.status === 'analyzing' && (
+                              <span className="ml-2 text-blue-600">
+                                (est. {videoEstimates[video.wholeVideoUrl] || 60}s)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
                       {video.status === 'analyzing' && (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
                             <div 
                               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                               style={{ width: `${analysisProgress}%` }}
                             ></div>
                           </div>
-                          <span className="text-sm text-blue-600 font-mono">
+                          <span className="text-xs text-blue-600 font-mono">
                             {analysisProgress}%
                           </span>
                         </div>
                       )}
                       {video.status === 'failed' && (
-                        <span className="text-sm text-red-600">{video.error}</span>
+                        <span className="text-xs text-red-600">{video.error}</span>
                       )}
                     </div>
+                    
+                    {/* Start Labeling Button */}
+                    <div className="flex justify-center">
+                      <button
+                        onClick={labelVideos}
+                        className="btn-secondary flex items-center text-sm px-3 py-2"
+                        disabled={selectedVideos.length === 0 || isAnalyzing}
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        {isAnalyzing ? 'Labeling...' : 'Start Labeling'}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Labeling Results Header */}
-      {analysisResults.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
+          {/* Labeling Results Section - Scrollable on Right */}
+          <div className="lg:col-span-2">
+            {analysisResults.length > 0 ? (
+              <div className="card">
+                          <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900">
               Labeling Results ({analysisResults.length} videos)
             </h3>
-            <button
-              onClick={() => setAnalysisResults([])}
-              className="text-sm text-red-600 hover:text-red-800"
-            >
-              Clear All
-            </button>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleExportCSV}
+                className="btn-secondary flex items-center text-sm"
+                disabled={analysisResults.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </button>
+              <button
+                onClick={() => setAnalysisResults([])}
+                className="text-sm text-red-600 hover:text-red-800"
+              >
+                Clear All
+              </button>
+            </div>
           </div>
 
-          {/* Results Grid - Full Width */}
-          <div className="w-full">
-            {analysisResults.map(result => (
-              <AnalysisCard key={result.id} result={result} />
-            ))}
+                {/* Results - Scrollable */}
+                <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                  {analysisResults.map(result => (
+                    <AnalysisCard key={result.id} result={result} />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="card">
+                <div className="text-center py-12">
+                  <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Analysis Results Yet</h3>
+                  <p className="text-gray-600">Click "Start Labeling" to begin analyzing your selected videos.</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -536,63 +603,41 @@ const OrganizedAnalysisSections = ({ analysis }) => {
     let currentSection = null
     let currentItems = []
     
-    // First pass: look for structured sections with headers
+    // Look for section headers with ** pattern
     for (const line of lines) {
       const trimmedLine = line.trim()
       if (!trimmedLine) continue
       
-      // Check if this is a section header (non-numbered line that could be a title)
-      if (!trimmedLine.match(/^\d+\./) && trimmedLine.length > 0) {
-        // This could be a section title - check if it looks like a title
-        const isLikelyTitle = (
-          trimmedLine.includes(':') || // Contains colon
-          trimmedLine.includes('**') || // Contains bold markers
-          trimmedLine.length < 100 || // Short enough to be a title
-          trimmedLine.match(/^[A-Z][^.!?]*$/) // Starts with capital, no sentence ending punctuation
-        )
-        
-        if (isLikelyTitle) {
-          // Save previous section if exists
-          if (currentSection && currentItems.length > 0) {
-            sections[currentSection] = currentItems
-          }
-          // Start new section (clean up the title)
-          currentSection = trimmedLine
-            .replace(/\*\*/g, '') // Remove **
-            .replace(/:$/, '') // Remove trailing :
-            .replace(/^\d+\.\s*/, '') // Remove leading numbers like "1.", "2.", etc.
-            .trim()
-          currentItems = []
-          console.log('🔍 Found section:', currentSection)
-        } else if (currentSection) {
-          // This is content for the current section
-          currentItems.push(trimmedLine)
+      // Check if this is a section header (starts with ** and ends with **)
+      if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
+        // Save previous section if exists
+        if (currentSection && currentItems.length > 0) {
+          sections[currentSection] = currentItems
         }
-              } else if (currentSection && trimmedLine.match(/^\d+\./)) {
-          // This is a numbered item
-          const item = trimmedLine.replace(/^\d+\.\s*/, '')
-          currentItems.push(item)
-        } else if (currentSection && trimmedLine.length > 0) {
-          // If we have a current section, treat as unnumbered item
-          currentItems.push(trimmedLine)
-        } else if (!currentSection && trimmedLine.length > 0) {
-          // If no current section, this might be an intro text or standalone item
-          if (!sections['Introduction']) {
-            sections['Introduction'] = []
-          }
-          sections['Introduction'].push(trimmedLine)
-        }
+        // Start new section (clean up the title)
+        currentSection = trimmedLine
+          .replace(/\*\*/g, '') // Remove **
+          .replace(/:$/, '') // Remove trailing :
+          .trim()
+        currentItems = []
+        console.log('🔍 Found section:', currentSection)
+      } else if (currentSection && trimmedLine.match(/^\d+\./)) {
+        // This is a numbered item
+        const item = trimmedLine.replace(/^\d+\.\s*/, '')
+        currentItems.push(item)
+      } else if (currentSection && trimmedLine.startsWith('- ')) {
+        // This is a bullet point item
+        const item = trimmedLine.replace(/^-\s*/, '')
+        currentItems.push(item)
+      } else if (currentSection && trimmedLine.length > 0) {
+        // If we have a current section, treat as unnumbered item
+        currentItems.push(trimmedLine)
+      }
     }
     
     // Save the last section
     if (currentSection && currentItems.length > 0) {
       sections[currentSection] = currentItems
-    }
-    
-    // If no structured sections were found, try to organize by content type
-    if (Object.keys(sections).length === 0 || (Object.keys(sections).length === 1 && sections['Introduction'])) {
-      console.log('🔍 No structured sections found, attempting content-based organization...')
-      return organizeByContentType(lines)
     }
     
     console.log('📋 Parsed sections:', Object.keys(sections))
@@ -664,57 +709,41 @@ const OrganizedAnalysisSections = ({ analysis }) => {
   
   const getSectionIcon = (section) => {
     const lowerSection = section.toLowerCase()
-    if (lowerSection.includes('visual') || lowerSection.includes('composition')) return '🎨'
-    if (lowerSection.includes('audio') || lowerSection.includes('sound')) return '🎵'
-    if (lowerSection.includes('text') || lowerSection.includes('overlay') || lowerSection.includes('messaging')) return '📝'
-    if (lowerSection.includes('temporal') || lowerSection.includes('structure')) return '⏱️'
-    if (lowerSection.includes('performance') || lowerSection.includes('indicator') || lowerSection.includes('context')) return '📊'
-    if (lowerSection.includes('vertical') || lowerSection.includes('context')) return '🎯'
-    if (lowerSection.includes('platform') || lowerSection.includes('context')) return '📱'
-    if (lowerSection.includes('base layer') || lowerSection.includes('foundation')) return '🏗️'
-    if (lowerSection.includes('middle layer') || lowerSection.includes('context')) return '🔗'
-    if (lowerSection.includes('top layer') || lowerSection.includes('dynamic')) return '⭐'
-    if (lowerSection.includes('introduction')) return '📖'
-    if (lowerSection.includes('other elements')) return '🔍'
+    if (lowerSection.includes('context detection')) return '🔍'
+    if (lowerSection.includes('visual composition')) return '🎨'
+    if (lowerSection.includes('audio elements')) return '🎵'
+    if (lowerSection.includes('text overlays')) return '📝'
+    if (lowerSection.includes('temporal structure')) return '⏱️'
+    if (lowerSection.includes('performance indicators')) return '📊'
+    if (lowerSection.includes('vertical context')) return '🎯'
+    if (lowerSection.includes('platform context')) return '📱'
     return '📋'
   }
   
   const getSectionColor = (section) => {
     const lowerSection = section.toLowerCase()
-    if (lowerSection.includes('visual') || lowerSection.includes('composition')) return 'border-blue-200 bg-blue-50'
-    if (lowerSection.includes('audio') || lowerSection.includes('sound')) return 'border-green-200 bg-green-50'
-    if (lowerSection.includes('text') || lowerSection.includes('overlay') || lowerSection.includes('messaging')) return 'border-purple-200 bg-purple-50'
-    if (lowerSection.includes('temporal') || lowerSection.includes('structure')) return 'border-orange-200 bg-orange-50'
-    if (lowerSection.includes('performance') || lowerSection.includes('indicator') || lowerSection.includes('context')) return 'border-red-200 bg-red-50'
-    if (lowerSection.includes('vertical') || lowerSection.includes('context')) return 'border-indigo-200 bg-indigo-50'
-    if (lowerSection.includes('platform') || lowerSection.includes('context')) return 'border-pink-200 bg-pink-50'
-    if (lowerSection.includes('base layer') || lowerSection.includes('foundation')) return 'border-gray-200 bg-gray-50'
-    if (lowerSection.includes('middle layer') || lowerSection.includes('context')) return 'border-yellow-200 bg-yellow-50'
-    if (lowerSection.includes('top layer') || lowerSection.includes('dynamic')) return 'border-emerald-200 bg-emerald-50'
-    if (lowerSection.includes('introduction')) return 'border-gray-200 bg-gray-50'
-    if (lowerSection.includes('other elements')) return 'border-gray-200 bg-gray-50'
+    if (lowerSection.includes('context detection')) return 'border-gray-200 bg-gray-50'
+    if (lowerSection.includes('visual composition')) return 'border-blue-200 bg-blue-50'
+    if (lowerSection.includes('audio elements')) return 'border-green-200 bg-green-50'
+    if (lowerSection.includes('text overlays')) return 'border-purple-200 bg-purple-50'
+    if (lowerSection.includes('temporal structure')) return 'border-orange-200 bg-orange-50'
+    if (lowerSection.includes('performance indicators')) return 'border-red-200 bg-red-50'
+    if (lowerSection.includes('vertical context')) return 'border-indigo-200 bg-indigo-50'
+    if (lowerSection.includes('platform context')) return 'border-pink-200 bg-pink-50'
     return 'border-gray-200 bg-gray-50'
   }
   
   // Sort sections in a logical order
   const sortSections = (sections) => {
     const sectionOrder = [
-      'Introduction',
-      'BASE LAYER',
-      'Visual Composition',
-      'Visual Elements',
-      'Audio Elements', 
-      'Text Overlays',
-      'Text & Messaging',
-      'Temporal Structure',
-      'Performance Indicators',
-      'Performance & Context',
-      'MIDDLE LAYER',
-      'Vertical Context',
-      'Platform Context',
-      'TOP LAYER',
-      'Other Elements',
-      'Analysis Results'
+      'VISUAL COMPOSITION',
+      'AUDIO ELEMENTS',
+      'TEXT OVERLAYS',
+      'TEMPORAL STRUCTURE',
+      'PERFORMANCE INDICATORS',
+      'VERTICAL CONTEXT',
+      'PLATFORM CONTEXT',
+      'CONTEXT DETECTION'
     ]
     
     return Object.entries(sections).sort(([a], [b]) => {

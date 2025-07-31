@@ -17,7 +17,7 @@ const Layout = ({ children }) => {
         <div className="px-8 pr-4 sm:pr-6 lg:pr-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-gray-900">ShowStop Creative Intelligence Engine - GAIA</h1>
+              <h1 className="text-xl font-bold text-gray-900">ShowStop Creative Intelligence - GAIA Competitor Analysis</h1>
             </div>
             
             {/* Navigation */}

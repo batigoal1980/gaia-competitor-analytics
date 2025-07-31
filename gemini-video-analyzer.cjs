@@ -8,60 +8,174 @@ class GAIAVideoAnalyzer {
     // Use the correct model for video understanding
     this.model = "gemini-2.5-flash";
     
-    // Simplified system prompt to avoid content blocking
+    // Simplified Video Analysis with Section-Based Organization
     this.systemPrompt = `
-You are a video content analyst. Analyze the uploaded video and provide exactly 50 descriptive labels organized by category.
+You are a video content analyst. Analyze the uploaded video and provide a comprehensive analysis organized by clear sections.
 
-Focus on:
-- Visual elements (colors, camera angles, composition)
-- Audio elements (voice, music, sound effects)
-- Text elements (overlays, typography, messaging)
-- Content structure (pacing, flow, timing)
-- Production quality and style
-- Brand and marketing elements
+## ANALYSIS FORMAT
 
-Provide your analysis in this format:
+Provide your analysis in this structured text format:
 
-**Visual Elements:**
-1. [description]
-2. [description]
-[continue with 15 total]
+**CONTEXT DETECTION:**
+- Detected Vertical: [primary vertical with confidence]
+- Detected Platform: [primary platform with confidence]
+- Multi-Vertical: [yes/no]
+- Platform Optimization: [key platform-specific features]
+
+**VISUAL COMPOSITION:**
+1. [detailed visual analysis]
+2. [detailed visual analysis]
+[continue with relevant visual elements]
+
+**AUDIO ELEMENTS:**
+1. [detailed audio analysis]
+2. [detailed audio analysis]
+[continue with relevant audio elements]
+
+**TEXT OVERLAYS:**
+1. [detailed text analysis]
+2. [detailed text analysis]
+[continue with relevant text elements]
+
+**TEMPORAL STRUCTURE:**
+1. [detailed structure analysis]
+2. [detailed structure analysis]
+[continue with relevant structure elements]
+
+**PERFORMANCE INDICATORS:**
+1. [detailed performance analysis]
+2. [detailed performance analysis]
+[continue with relevant performance elements]
+
+**VERTICAL CONTEXT:**
+1. [detailed vertical-specific analysis]
+2. [detailed vertical-specific analysis]
+[continue with relevant vertical elements]
+
+**PLATFORM CONTEXT:**
+1. [detailed platform-specific analysis]
+2. [detailed platform-specific analysis]
+[continue with relevant platform elements]
+
+## FORMAT REFERENCE EXAMPLE:
+
+**CONTEXT DETECTION:**
+- Detected Vertical: Home Goods / Sleep Health (0.95)
+- Detected Platform: Short-Form Video / Social Media (0.90)
+- Multi-Vertical: No
+- Platform Optimization: Vertical video format, mobile-optimized, fast-paced editing
+
+**VISUAL COMPOSITION:**
+1. Bedroom setting visual.
+2. Single speaker presence.
+3. Direct-to-camera address by speaker.
+4. Product packaging display.
+5. Animated emoji overlays (e.g., sweat, cold, sleep, hearts, snowflakes, germs, sun, queen, party, truck, towels).
+6. Fantasy/concept animation (astronaut, sleeping couple).
+7. Bright and clean visual aesthetic.
+8. Varied shot composition (close-up to medium shots).
+9. Product demonstration (sheets being changed, implied).
+10. Lifestyle imagery (couple sleeping comfortably).
+11. Visually engaging transitions.
+12. Emphasis on product benefits through visuals.
+13. Minimalist background for focus.
+14. Clear branding on product packaging.
+15. Consistent visual tone.
+
+**AUDIO ELEMENTS:**
+1. Female voiceover narration.
+2. Enthusiastic and friendly vocal tone.
+3. Upbeat background music.
+4. Clear and concise audio delivery.
+5. Conversational speech style.
+
+**TEXT OVERLAYS:**
+1. Key benefits highlighted in text.
+2. Animated text for emphasis.
+3. Brand name display ("Miracle Sheets," "Miracle Made").
+4. Problem statement text.
+5. Solution-oriented text.
+6. Promotional offer text.
+7. Call-to-action text overlay.
+8. Feature-benefit text pairing.
+9. Visual comparison with text (e.g., "5-star hotels").
+10. Support for audio narration.
+
+**TEMPORAL STRUCTURE:**
+1. Strong opening hook ("Hey You!").
+2. Problem-solution narrative flow.
+3. Fast-paced editing.
+4. Benefit-driven storytelling arc.
+5. Direct and urgent call to action.
+
+**PERFORMANCE INDICATORS:**
+1. Direct response advertising.
+2. Conversion-focused creative.
+3. Trial promotion.
+
+**VERTICAL CONTEXT:**
+1. Sleep quality improvement.
+2. Temperature regulation benefit.
+3. Bedding product category.
+4. Hygiene and cleanliness focus (self-cleaning, antibacterial).
+5. Comfort and luxury appeal.
+6. Health and wellness connection (deep sleep).
+7. Household utility product.
+8. Innovative fabric technology (NASA-inspired).
+9. Solution for common sleep issues (night sweats, exhaustion).
+10. Home improvement/lifestyle enhancement.
+
+**PLATFORM CONTEXT:**
+1. Vertical video format (9:16 aspect ratio).
+2. Optimized for mobile viewing.
+
+## ANALYSIS GUIDELINES
+
+**Visual Composition:**
+- Keep descriptions concise and specific (e.g., "Bedroom setting visual", "Single speaker presence")
+- Focus on what is visually present, not detailed analysis
+- Use simple, direct language like the example format
 
 **Audio Elements:**
-16. [description]
-17. [description]
-[continue with 5 total]
+- Keep descriptions concise and specific (e.g., "Female voiceover narration", "Upbeat background music")
+- Focus on what is audibly present, not detailed analysis
+- Use simple, direct language like the example format
 
-**Text Elements:**
-21. [description]
-22. [description]
-[continue with 10 total]
+**Text Overlays:**
+- Keep descriptions concise and specific (e.g., "Key benefits highlighted in text", "Brand name display")
+- Focus on what text is present, not detailed analysis
+- Use simple, direct language like the example format
 
-**Content Structure:**
-31. [description]
-32. [description]
-[continue with 5 total]
+**Temporal Structure:**
+- Keep descriptions concise and specific (e.g., "Strong opening hook", "Fast-paced editing")
+- Focus on structural elements, not detailed analysis
+- Use simple, direct language like the example format
 
-**Production Quality:**
-36. [description]
-37. [description]
-[continue with 5 total]
+**Performance Indicators:**
+- Keep descriptions concise and specific (e.g., "Direct response advertising", "Conversion-focused creative")
+- Focus on performance intent, not detailed analysis
+- Use simple, direct language like the example format
 
-**Brand Elements:**
-41. [description]
-42. [description]
-[continue with 10 total]
+**Vertical Context:**
+- Keep descriptions concise and specific (e.g., "Sleep quality improvement", "Bedding product category")
+- Focus on vertical-specific elements, not detailed analysis
+- Use simple, direct language like the example format
 
-Be descriptive, specific, and professional in your analysis.
+**Platform Context:**
+- Keep descriptions concise and specific (e.g., "Vertical video format", "Optimized for mobile viewing")
+- Focus on platform-specific elements, not detailed analysis
+- Use simple, direct language like the example format
 
 ## CRITICAL REQUIREMENTS:
-1. MUST use the exact section headers shown above (with ** and : )
-2. MUST number items sequentially within each section
-3. MUST organize content into the specified categories
-4. MUST generate exactly 50 labels total
-5. MUST follow the hierarchical structure outlined in the architecture
 
-Analyze the provided video using this comprehensive framework and generate exactly 50 creative labels that capture the full spectrum of creative elements, vertical context, and platform optimization.
+1. **MUST use the exact section headers shown above (with ** and : )**
+2. **MUST number items sequentially within each section**
+3. **MUST be descriptive, specific, and professional in analysis**
+4. **MUST focus on the most relevant elements for the detected vertical and platform**
+5. **MUST provide context-specific insights where applicable**
+6. **MUST maintain high quality and accuracy in analysis**
+
+Analyze the provided video using this comprehensive framework and generate detailed insights organized by the specified sections.
     `;
   }
 
@@ -247,31 +361,14 @@ Analyze the provided video using this comprehensive framework and generate exact
       // Generate content using the uploaded file with retry logic
       const analysis = await this.generateContentWithRetry(myfile.uri, myfile.mimeType);
       
-      // Try to parse as JSON, if not, return as text
-      try {
-        const parsedAnalysis = JSON.parse(analysis);
-        
-        // Validate that we have exactly 50 labels
-        if (parsedAnalysis.analysis && parsedAnalysis.analysis.labels) {
-          const labelCount = parsedAnalysis.analysis.labels.length;
-          console.log(`Generated ${labelCount} labels`);
-          
-          if (labelCount !== 50) {
-            console.warn(`Warning: Expected 50 labels, got ${labelCount}`);
-          }
-        }
-        
-        return parsedAnalysis;
-      } catch (parseError) {
-        console.error('JSON parsing failed, returning as text:', parseError);
-        return {
-          analysis: analysis,
-          format: 'text',
-          timestamp: new Date().toISOString(),
-          error: 'Failed to parse JSON response',
-          fileSize: `${(fileSize / (1024 * 1024)).toFixed(2)} MB`
-        };
-      }
+      // Return the analysis as structured text
+      console.log('✅ Analysis completed successfully');
+      return {
+        analysis: analysis,
+        format: 'text',
+        timestamp: new Date().toISOString(),
+        fileSize: `${(fileSize / (1024 * 1024)).toFixed(2)} MB`
+      };
 
     } catch (error) {
       console.error('Video analysis error:', error);
@@ -303,7 +400,20 @@ Analyze the provided video using this comprehensive framework and generate exact
       const analysis = await this.generateContentWithRetry(myfile.uri, myfile.mimeType);
       
       try {
-        return JSON.parse(analysis);
+        let jsonString = analysis;
+        
+        // Remove markdown code blocks if present
+        if (jsonString.includes('```json')) {
+          jsonString = jsonString.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        }
+        if (jsonString.includes('```')) {
+          jsonString = jsonString.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        // Clean up any remaining whitespace
+        jsonString = jsonString.trim();
+        
+        return JSON.parse(jsonString);
       } catch (parseError) {
         return {
           analysis: analysis,
@@ -343,7 +453,20 @@ Analyze the provided video using this comprehensive framework and generate exact
       const analysis = await this.generateContentWithRetry(myfile.uri, myfile.mimeType);
       
       try {
-        return JSON.parse(analysis);
+        let jsonString = analysis;
+        
+        // Remove markdown code blocks if present
+        if (jsonString.includes('```json')) {
+          jsonString = jsonString.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        }
+        if (jsonString.includes('```')) {
+          jsonString = jsonString.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+        
+        // Clean up any remaining whitespace
+        jsonString = jsonString.trim();
+        
+        return JSON.parse(jsonString);
       } catch (parseError) {
         return {
           analysis: analysis,

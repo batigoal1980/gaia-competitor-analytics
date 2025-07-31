@@ -30,19 +30,28 @@ const VideoCard = ({ video }) => {
 
   // Intersection Observer for lazy loading
   useEffect(() => {
+    // Check if IntersectionObserver is supported
+    if (!window.IntersectionObserver) {
+      // Fallback for older browsers - load immediately
+      setIsInView(true)
+      setShouldLoad(true)
+      return
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsInView(true)
-            // Delay loading to avoid overwhelming the browser
-            setTimeout(() => setShouldLoad(true), 100)
+            // Shorter delay on mobile for better responsiveness
+            const delay = window.innerWidth < 768 ? 50 : 100
+            setTimeout(() => setShouldLoad(true), delay)
             observer.unobserve(entry.target)
           }
         })
       },
       {
-        rootMargin: '50px', // Start loading 50px before the card comes into view
+        rootMargin: window.innerWidth < 768 ? '20px' : '50px', // Smaller margin on mobile
         threshold: 0.1
       }
     )
@@ -204,8 +213,8 @@ const VideoCard = ({ video }) => {
       className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
     >
       {/* Video Preview */}
-      <div className="flex justify-center p-4">
-        <div className="relative w-36 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
+      <div className="flex justify-center p-2 sm:p-4">
+        <div className="relative w-full max-w-36 h-48 sm:h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group">
           <div className="w-full h-full flex items-center justify-center">
             {shouldLoad && videoUrl ? (
               <video
@@ -213,6 +222,7 @@ const VideoCard = ({ video }) => {
                 src={videoUrl}
                 className="w-full h-full object-cover"
                 preload="metadata"
+                playsInline
                 onPlay={handleVideoPlay}
                 onPause={handleVideoPause}
                 onEnded={handleVideoEnded}

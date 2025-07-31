@@ -197,11 +197,9 @@ const Dashboard = () => {
                   </div>
                 </div>
               ) : sampleVideos.length > 0 ? (
-                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {sampleVideos.map((video) => (
-                    <div key={video.id} className="flex-shrink-0 w-80">
-                      <VideoCard video={video} />
-                    </div>
+                    <VideoCard key={video.id} video={video} />
                   ))}
                 </div>
               ) : (
