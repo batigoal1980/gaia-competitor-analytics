@@ -25,6 +25,7 @@ const VideoLabeling = () => {
   const [videoStates, setVideoStates] = useState({}) // Track play/pause state for each video
   const [totalEstimatedTime, setTotalEstimatedTime] = useState(0) // Track total estimated time
   const [videoEstimates, setVideoEstimates] = useState({}) // Track individual video estimates
+  const videoRefs = useRef({}) // Add refs for video elements
   const location = useLocation()
   const navigate = useNavigate()
   
@@ -446,12 +447,15 @@ const VideoLabeling = () => {
                     <div className="flex flex-col items-center mb-3">
                       <div className="relative w-full max-w-48 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group video-container">
                         <div className="w-full h-full flex items-center justify-center">
-                                                      <video
-                              src={video.wholeVideoUrl}
-                              className="w-full h-full object-cover"
-                              preload="metadata"
-                              playsInline
-                              controls={true}
+                          <video
+                            ref={(el) => {
+                              if (el) videoRefs.current[video.wholeVideoUrl] = el
+                            }}
+                            src={video.wholeVideoUrl}
+                            className="w-full h-full object-cover"
+                            preload="metadata"
+                            playsInline
+                            controls={true}
                             onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
                             onPause={() => handleVideoPause(video.wholeVideoUrl)}
                             onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
@@ -470,6 +474,23 @@ const VideoLabeling = () => {
                             onCanPlay={() => {
                               console.log('Video can play:', video.wholeVideoUrl);
                             }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                const videoElement = videoRefs.current[video.wholeVideoUrl]
+                                if (videoElement) {
+                                  if (videoStates[video.wholeVideoUrl]) {
+                                    videoElement.pause()
+                                  } else {
+                                    videoElement.play()
+                                  }
+                                }
+                              }
+                            }}
+                            onTouchStart={() => {
+                              console.log('Video touch start - videoUrl:', video.wholeVideoUrl)
+                            }}
+                            tabIndex={0}
                           />
                         </div>
                         
