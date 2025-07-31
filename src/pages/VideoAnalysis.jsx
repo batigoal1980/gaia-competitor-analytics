@@ -447,51 +447,53 @@ const VideoLabeling = () => {
                     <div className="flex flex-col items-center mb-3">
                       <div className="relative w-full max-w-48 h-64 bg-gray-200 rounded overflow-hidden cursor-pointer group video-container">
                         <div className="w-full h-full flex items-center justify-center">
-                          <video
-                            ref={(el) => {
-                              if (el) videoRefs.current[video.wholeVideoUrl] = el
-                            }}
-                            src={video.wholeVideoUrl}
-                            className="w-full h-full object-cover"
-                            preload="metadata"
-                            playsInline
-                            controls={true}
-                            onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
-                            onPause={() => handleVideoPause(video.wholeVideoUrl)}
-                            onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
-                            onLoadStart={() => {
-                              console.log('Video loading started:', video.wholeVideoUrl);
-                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loading' }));
-                            }}
-                            onLoadedData={() => {
-                              console.log('Video loaded successfully:', video.wholeVideoUrl);
-                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loaded' }));
-                            }}
-                            onError={(e) => {
-                              console.error('Video load error:', e.target.error);
-                              setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'error' }));
-                            }}
-                            onCanPlay={() => {
-                              console.log('Video can play:', video.wholeVideoUrl);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault()
-                                const videoElement = videoRefs.current[video.wholeVideoUrl]
-                                if (videoElement) {
-                                  if (videoStates[video.wholeVideoUrl]) {
-                                    videoElement.pause()
-                                  } else {
-                                    videoElement.play()
+                          {video.wholeVideoUrl ? (
+                            <video
+                              ref={(el) => {
+                                if (el) videoRefs.current[video.wholeVideoUrl] = el
+                              }}
+                              src={video.wholeVideoUrl}
+                              className="w-full h-full object-cover"
+                              preload="metadata"
+                              playsInline
+                              controls={true}
+                              onPlay={() => handleVideoPlay(video.wholeVideoUrl)}
+                              onPause={() => handleVideoPause(video.wholeVideoUrl)}
+                              onEnded={() => handleVideoEnded(video.wholeVideoUrl)}
+                              onLoadedData={() => {
+                                console.log('Video loaded successfully:', video.wholeVideoUrl);
+                                setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'loaded' }));
+                              }}
+                              onError={(e) => {
+                                console.error('Video load error:', e.target.error);
+                                setVideoLoadingStates(prev => ({ ...prev, [video.wholeVideoUrl]: 'error' }));
+                              }}
+                              onCanPlay={() => {
+                                console.log('Video can play:', video.wholeVideoUrl);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault()
+                                  const videoElement = videoRefs.current[video.wholeVideoUrl]
+                                  if (videoElement) {
+                                    if (videoStates[video.wholeVideoUrl]) {
+                                      videoElement.pause()
+                                    } else {
+                                      videoElement.play()
+                                    }
                                   }
                                 }
-                              }
-                            }}
-                            onTouchStart={() => {
-                              console.log('Video touch start - videoUrl:', video.wholeVideoUrl)
-                            }}
-                            tabIndex={0}
-                          />
+                              }}
+                              onTouchStart={() => {
+                                console.log('Video touch start - videoUrl:', video.wholeVideoUrl)
+                              }}
+                              tabIndex={0}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                              <Video className="w-8 h-8 text-gray-400" />
+                            </div>
+                          )}
                         </div>
                         
 
@@ -506,15 +508,7 @@ const VideoLabeling = () => {
                           </div>
                         )}
                         
-                        {/* Loading indicator */}
-                        {videoLoadingStates[video.wholeVideoUrl] === 'loading' && (
-                          <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
-                            <div className="text-center">
-                              <Loader2 className="w-6 h-6 text-white animate-spin mx-auto mb-2" />
-                              <p className="text-xs text-white">Loading...</p>
-                            </div>
-                          </div>
-                        )}
+
                         
                         {/* Clips Count Overlay */}
                         <div className="absolute top-2 right-2">
